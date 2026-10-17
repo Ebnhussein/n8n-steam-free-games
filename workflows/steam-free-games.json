@@ -1,0 +1,219 @@
+{
+  "name": "Steam Free Games - Portable",
+  "nodes": [
+    {
+      "id": "hourly",
+      "name": "01 - Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "manual",
+      "name": "02 - Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        180
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "run",
+      "name": "03 - Run Steam Helper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://steam-helper:3000/v1/run",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"dryRun\":true}",
+        "options": {
+          "timeout": 300000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "build",
+      "name": "04 - Build Notifications",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nif (!Array.isArray(data.results)) throw new Error('Invalid Steam helper response');\nconst test = data.mode === 'dry_run';\nconst cache = $getWorkflowStaticData('global');\ncache.sent ||= {};\nconst escape = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst labels = {\n  claimed: '✅ اتضافت لمكتبتك / Added to your library',\n  needs_review: '⚠️ محتاجة مراجعة / Needs review',\n  verification_pending: '⏳ الإضافة غير مؤكدة / Ownership unconfirmed',\n  eligible_dry_run: '🧪 اختبار بدون إضافة / Dry run',\n  error: '❌ فشلت المحاولة / Attempt failed'\n};\nconst now = Date.now();\nfor (const [key, time] of Object.entries(cache.sent)) {\n  if (now - time > 30 * 86400000) delete cache.sent[key];\n}\nconst out = [];\nfor (const g of data.results) {\n  if (g.status === 'already_owned') continue;\n  if (!/^\\d{1,10}$/.test(String(g.appId))) throw new Error('Invalid app ID');\n  const key = [g.appId, g.status, g.reason || ''].join(':');\n  if (!test && cache.sent[key] && now - cache.sent[key] < 7 * 86400000) continue;\n  const title = String(g.name || g.appId).slice(0, 120);\n  const reason = String(g.reason || '').slice(0, 220);\n  const text = [\n    test ? '🧪 TEST — no games added' : '',\n    '<b>🎮 ' + escape(title) + '</b>',\n    '💰 قبل العرض / Before: ' + escape(String(g.originalPrice || 'غير متاح / Unavailable').slice(0, 60)),\n    labels[g.status] || escape(g.status),\n    reason ? escape(reason) : '',\n    'https://store.steampowered.com/app/' + g.appId + '/'\n  ].filter(Boolean).join('\\n');\n  const photo = /^https:\\/\\//i.test(g.photo || '') ? g.photo : null;\n  out.push({json: {text, photo}});\n  // n8n commits static data after a successful scheduled execution.\n  // Failed Telegram sends fail the execution, preserving retryability.\n  if (!test) cache.sent[key] = now;\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "photoif",
+      "name": "05 - Has Photo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        780,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-photo",
+              "leftValue": "={{ $json.photo || \"\" }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "photo",
+      "name": "06 - Telegram Photo",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        -100
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendPhoto",
+        "chatId": "YOUR_CHAT_ID",
+        "file": "={{ $json.photo }}",
+        "additionalFields": {
+          "caption": "={{ $json.text }}",
+          "parse_mode": "HTML"
+        }
+      }
+    },
+    {
+      "id": "text",
+      "name": "07 - Telegram Text",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        160
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "YOUR_CHAT_ID",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "HTML",
+          "appendAttribution": false
+        }
+      }
+    }
+  ],
+  "connections": {
+    "01 - Every Hour": {
+      "main": [
+        [
+          {
+            "node": "03 - Run Steam Helper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 - Manual Test": {
+      "main": [
+        [
+          {
+            "node": "03 - Run Steam Helper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 - Run Steam Helper": {
+      "main": [
+        [
+          {
+            "node": "04 - Build Notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 - Build Notifications": {
+      "main": [
+        [
+          {
+            "node": "05 - Has Photo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 - Has Photo?": {
+      "main": [
+        [
+          {
+            "node": "06 - Telegram Photo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07 - Telegram Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {}
+}

@@ -1,0 +1,52 @@
+{
+  "name": "Steam Free Games - Error Alert",
+  "active": false,
+  "nodes": [
+    {
+      "id": "error",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "alert",
+      "name": "Telegram Error Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "YOUR_CHAT_ID",
+        "text": "={{ '❌ Steam automation failed\\nStep: ' + ($json.execution?.lastNodeExecuted || $json.trigger?.error?.node?.name || 'Unknown') + '\\nReason: ' + ($json.execution?.error?.message || $json.trigger?.error?.message || 'Check n8n execution') + '\\n' + ($json.execution?.url || '') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Telegram Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "n8n-steam-free-games",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-hosted Steam giveaways helper and n8n Telegram workflow",
+  "license": "MIT",
+  "engines": {"node": ">=22"},
+  "scripts": {"start": "node src/server.cjs", "login": "node src/cli.cjs login", "test": "node --test", "init": "node src/cli.cjs init"},
+  "dependencies": {"steam-session": "1.9.4"}
+}

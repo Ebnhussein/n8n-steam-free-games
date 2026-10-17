@@ -1,0 +1,55 @@
+name: Bug report / مشكلة
+description: Report a reproducible problem without secrets / بلّغ عن مشكلة بدون بيانات سرية
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read docs/TROUBLESHOOTING.md first. Never include tokens, passwords, Guard codes, cookies, auth.json, private keys, or raw account responses.
+        راجع دليل المشاكل الأول. متشاركش توكنات أو باسورد أو كود Guard أو كوكيز أو ملف الدخول أو مفاتيح خاصة.
+  - type: input
+    id: versions
+    attributes:
+      label: Project and n8n versions / الإصدارات
+      placeholder: "Project 0.1.0; n8n ..."
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment / البيئة
+      placeholder: "Ubuntu, ARM64/AMD64, Docker Compose version"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area / الجزء
+      options:
+        - Docker or networking
+        - Steam login
+        - Discovery
+        - Claim or ownership verification
+        - n8n credentials or workflow
+        - Telegram
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps and expected/actual result / الخطوات والمتوقع واللي حصل
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Redacted error / الخطأ بعد إخفاء بياناتك
+      description: Share only the specific error/status. Do not attach credential exports or auth files.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before submitting / قبل الإرسال
+      options:
+        - label: I removed all secrets and private account data / شلت كل البيانات السرية
+          required: true

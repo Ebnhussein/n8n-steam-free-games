@@ -1,0 +1,37 @@
+const {test} = require('node:test');
+const assert = require('node:assert/strict');
+const {once} = require('node:events');
+const {createServer} = require('../src/server.cjs');
+test('API requires a key and an explicit boolean dryRun', async t => {
+  const key = 'x'.repeat(64);
+  let calls = 0;
+  const server = createServer({key, execute: async opts => { calls++; return {mode: opts.dryRun ? 'dry_run' : 'claim'}; }});
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => {server.closeAllConnections(); server.close();});
+  const url = 'http://127.0.0.1:' + server.address().port;
+  assert.equal((await fetch(url + '/v1/run', {method: 'POST', body: '{}'})).status, 401);
+  const headers = {'X-API-Key': key};
+  assert.equal((await fetch(url + '/v1/run', {method: 'POST', headers, body: '{}'})).status, 400);
+  const r = await fetch(url + '/v1/run', {method: 'POST', headers, body: '{"dryRun":true}'});
+  assert.equal(r.status, 200);
+  assert.equal((await r.json()).mode, 'dry_run');
+  assert.equal(calls, 1);
+});
+test('parallel runs are rejected until the active run finishes', async t => {
+  const key = 'x'.repeat(64);
+  let release, started;
+  const active = new Promise(resolve => { started = resolve; });
+  const pending = new Promise(resolve => { release = resolve; });
+  const server = createServer({key, execute: async () => { started(); await pending; return {ok: true}; }});
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => {server.closeAllConnections(); server.close();});
+  const url = 'http://127.0.0.1:' + server.address().port + '/v1/run';
+  const opts = {method: 'POST', headers: {'X-API-Key': key}, body: '{"dryRun":true}'};
+  const first = fetch(url, opts);
+  await active;
+  assert.equal((await fetch(url, opts)).status, 409);
+  release();
+  assert.equal((await first).status, 200);
+});

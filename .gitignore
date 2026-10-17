@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.example
+data/
+*.key
+*.pem
+auth.json
+*.bak*
+coverage/
+*.log
+*.zip

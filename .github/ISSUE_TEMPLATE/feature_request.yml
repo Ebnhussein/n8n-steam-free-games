@@ -1,0 +1,19 @@
+name: Feature request / اقتراح
+description: Suggest a focused improvement / اقترح تحسين واضح
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case / المشكلة أو الاستخدام
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior / التصرف المقترح
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: Do not include Steam/Telegram secrets or request a bypass of Steam Guard or region restrictions.
