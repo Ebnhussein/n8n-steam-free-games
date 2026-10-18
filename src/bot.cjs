@@ -12,6 +12,7 @@ async function run(steam, {dryRun = true, maxClaims = 20, wait = ms => new Promi
       if (ownership.apps.has(appId)) return finish('already_owned');
       const page = await steam.page(appId);
       game.name ||= page.name;
+      game.expiresAt = page.expiresAt || null;
       // The only exception to a free-to-keep giveaway is an explicitly verified free base game.
       if (!page.giveaway && !(asBase && await steam.isFree(appId))) return finish('needs_review', {reason: 'No permanent free offer verified / لم يتم تأكيد عرض تملك مجاني'});
       if (page.base && !ownership.apps.has(page.base.appId)) {
@@ -42,6 +43,6 @@ async function run(steam, {dryRun = true, maxClaims = 20, wait = ms => new Promi
     }
   }
   for (const offer of scan.games) await process(offer.appId, offer);
-  return {mode: dryRun ? 'dry_run' : 'claim', candidateCount: scan.games.length, searchTotal: scan.searchTotal, attempts, results};
+  return {mode: dryRun ? 'dry_run' : 'claim', candidateCount: scan.games.length, candidateAppIds: scan.games.map(g => g.appId), searchTotal: scan.searchTotal, attempts, results};
 }
 module.exports = {run};

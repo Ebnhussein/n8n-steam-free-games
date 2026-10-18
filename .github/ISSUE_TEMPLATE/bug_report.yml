@@ -11,7 +11,7 @@ body:
     id: versions
     attributes:
       label: Project and n8n versions / الإصدارات
-      placeholder: "Project 0.1.0; n8n ..."
+      placeholder: "Project 0.1.1; n8n ..."
     validations:
       required: true
   - type: input

@@ -308,9 +308,9 @@ For a replacement installation, disable your old Steam workflow before enabling 
 ### 9.3 Notification behavior
 
 - Photo + caption when a source image exists; otherwise plain text.
-- Original price uses the Store response's currency; unavailable prices are labeled unavailable.
+- Original price uses the Store response's currency; unavailable prices are labeled unavailable. A verified giveaway end time is shown in Africa/Cairo with time remaining at send time; otherwise the end time is explicitly unavailable.
 - Already-owned items are omitted.
-- Identical status/reason notifications are suppressed for seven days after successful **scheduled** executions. A changed status/reason can notify immediately.
+- The same offer/status/deadline is notified once after successful **scheduled** executions. A changed status or announced deadline can notify again. Countdown, image, price, and reason-text changes do not trigger repeats. Two consecutive complete absent scans allow a returning offer to notify again.
 - Manual executions do not persist n8n workflow static data and can repeat notifications.
 - A failed delivery fails the execution. Check n8n history; Telegram cannot deliver an error alert if Telegram itself is unavailable.
 

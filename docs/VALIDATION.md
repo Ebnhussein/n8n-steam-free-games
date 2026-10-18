@@ -18,6 +18,8 @@ This is a portable rewrite of a personal n8n/SSH experiment. It is not advertise
 - A free base is processed before its DLC; unconfirmed base ownership blocks the DLC.
 - App/package ownership confirms successful claims; authentication/ownership failures propagate.
 - API authentication, explicit dryRun validation, and concurrency protection.
+- Per-offer notification state, changed status/deadline updates, Cairo timezone formatting, unknown deadlines, and two-scan disappearance/reappearance.
+- App-scoped expiry extraction from Steam JSON without borrowing another app's date.
 
 Tests use synthetic fixtures and mocks. They do not contact a Steam account or grant licenses. The default imported workflow is inactive and dry-run enabled.
 

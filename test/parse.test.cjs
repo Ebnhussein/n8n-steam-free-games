@@ -23,3 +23,19 @@ test('keeps ambiguous free packages for manual review', () => {
 test('rejects license forms that post outside Steam', () => {
   assert.equal(parse.page('<form method="POST" action="https://other.test/freelicense/addfreelicense/"><input name="subid" value="123"></form>', '1').packages.length, 0);
 });
+function props(items) {
+  return '<div data-props="' + JSON.stringify({rgPayloads: [{store_items: items}]}).replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '"></div>';
+}
+test('extracts the current app free-to-keep deadline from Steam JSON', () => {
+  const html = props([{appid: 20, best_purchase_option: {packageid: 123, is_free_to_keep: 1, free_to_keep_ends: 1792429200}}]);
+  assert.equal(parse.offerEnd(html, '20', ['123']), '2026-10-19T17:00:00.000Z');
+});
+test('does not borrow another app deadline or a regular sale deadline', () => {
+  const html = props([{appid: 99, best_purchase_option: {is_free_to_keep: 1, free_to_keep_ends: 1792429200}}, {appid: 20, best_purchase_option: {is_free_to_keep: 0, free_to_keep_ends: 1792429200}}]);
+  assert.equal(parse.offerEnd(html, '20'), null);
+});
+test('ambiguous or unavailable deadlines remain unknown', () => {
+  assert.equal(parse.offerEnd('<div>Free to keep until tomorrow!</div>', '20'), null);
+  const html = props([{appid: 20, purchase_options: [{is_free_to_keep: 1, free_to_keep_ends: 1792429200}, {is_free_to_keep: 1, free_to_keep_ends: 1792947600}]}]);
+  assert.equal(parse.offerEnd(html, '20'), null);
+});

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 — 2026-10-18
+
+- Replace the seven-day resend window with per-offer/status/deadline notification state.
+- Allow a returning offer after two complete absent scans; do not resend for countdown, price, image, or reason-text changes.
+- Read explicit per-app free-to-keep deadlines from Steam Store JSON and display Cairo time plus remaining duration.
+- Add legacy SSH workflow code and a backed-up, syntax-checked metadata upgrade script.
+- Add notification/expiry regression tests; no successful live claim is implied.
+
 ## 0.1.0 — 2026-10-18
 
 Initial experimental portable release.

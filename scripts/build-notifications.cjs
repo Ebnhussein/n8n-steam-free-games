@@ -1,0 +1,11 @@
+'use strict';
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.join(__dirname, '..');
+const code = fs.readFileSync(path.join(root, 'workflows/code/build-notifications.js'), 'utf8');
+const workflowPath = path.join(root, 'workflows/steam-free-games.json');
+const workflow = JSON.parse(fs.readFileSync(workflowPath));
+workflow.nodes.find(n => n.name === '04 - Build Notifications').parameters.jsCode = code;
+fs.writeFileSync(workflowPath, JSON.stringify(workflow, null, 2) + '\n');
+const adapter = `// Original SSH workflow: replace node 08 - Build Telegram Message.\nconst execution = $input.first().json;\nif (Number(execution.code) !== 0) throw new Error(execution.stderr || 'فشل سكربت Steam');\nconst parsed = JSON.parse(execution.stdout);\nconst offers = $('05 - Filter Offers').first().json.games || [];\nconst byId = new Map(offers.map(g => [String(g.appId), g]));\nconst data = {...parsed, presenceRecorded: true, candidateAppIds: offers.map(g => g.appId), results: parsed.results.map(g => ({...byId.get(String(g.appId)), ...g}))};\n`;
+fs.writeFileSync(path.join(root, 'workflows/code/legacy-build-message.js'), adapter + code.replace('const data = $input.first().json;\n', ''));

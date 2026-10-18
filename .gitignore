@@ -10,3 +10,5 @@ auth.json
 coverage/
 *.log
 *.zip
+__pycache__/
+*.py[cod]

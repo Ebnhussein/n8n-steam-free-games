@@ -26,6 +26,29 @@ function offers(html) {
   }
   return [...found.values()];
 }
+function offerEnd(html, appId, packageIds = []) {
+  // Steam embeds store items in HTML-escaped JSON data-props attributes.
+  // Read only this app's explicitly free-to-keep purchase options.
+  const ends = new Set(), wanted = new Set(packageIds.map(String));
+  let visited = 0;
+  function walk(value, inheritedApp = null, depth = 0) {
+    if (!value || typeof value !== 'object' || depth > 60 || ++visited > 50000) return;
+    if (Array.isArray(value)) { for (const child of value) walk(child, inheritedApp, depth + 1); return; }
+    const ownApp = value.appid ?? (value.item_type === 0 ? value.id : null);
+    const currentApp = ownApp == null ? inheritedApp : String(ownApp);
+    if (currentApp === String(appId) && [true, 1, '1'].includes(value.is_free_to_keep) &&
+        (!wanted.size || wanted.has(String(value.packageid)))) {
+      const timestamp = Number(value.free_to_keep_ends);
+      if (Number.isFinite(timestamp) && timestamp >= 946684800 && timestamp <= 4102444800) ends.add(timestamp);
+    }
+    for (const child of Object.values(value)) walk(child, currentApp, depth + 1);
+  }
+  for (const match of html.matchAll(/\bdata-props\s*=\s*(["'])([\s\S]*?)\1/gi)) {
+    if (!match[2].includes('free_to_keep_ends')) continue;
+    try { walk(JSON.parse(decode(match[2]))); } catch { /* unknown markup -> unknown deadline */ }
+  }
+  return ends.size === 1 ? new Date([...ends][0] * 1000).toISOString() : null;
+}
 function page(html, appId) {
   const base = html.match(/requires\s+the\s+base\s+game\s*<a\b[^>]*href=["']https:\/\/store\.steampowered\.com\/app\/(\d+)\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/i);
   const candidates = new Map();
@@ -46,7 +69,8 @@ function page(html, appId) {
     name: clean(html.match(/<div[^>]*id=["']appHubAppName["'][^>]*>([\s\S]*?)<\/div>/i)?.[1]) || appId,
     giveaway: /\bfree\s+to\s+keep\b/i.test(html),
     base: base ? {appId: base[1], name: clean(base[2])} : null,
-    packages: [...candidates.values()]
+    packages: [...candidates.values()],
+    expiresAt: offerEnd(html, appId, [...candidates.keys()])
   };
 }
-module.exports = {clean, decode, attr, rows, offers, page};
+module.exports = {clean, decode, attr, rows, offers, page, offerEnd};

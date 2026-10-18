@@ -16,7 +16,7 @@ Discover Steam **free-to-keep games and DLC**, attempt eligible claims, and rece
 
 A small self-hosted helper handles Steam outside n8n. Import the workflow and configure your own credentials: **no SSH private key, custom n8n runner, or external Code-node modules**.
 
-> **Experimental v0.1.0.** Automated tests cover the logic; a successful live license grant has not yet been confirmed for this portable release. Steam Store endpoints are undocumented and can change. See [validation status](docs/VALIDATION.md). Independent community project; not affiliated with Valve, Steam, or n8n.
+> **Experimental v0.1.1.** Automated tests cover the logic; a successful live license grant has not yet been confirmed for this portable release. Steam Store endpoints are undocumented and can change. See [validation status](docs/VALIDATION.md). Independent community project; not affiliated with Valve, Steam, or n8n.
 
 ## Start here
 
@@ -36,8 +36,8 @@ A small self-hosted helper handles Steam outside n8n. Import the workflow and co
 | Permanent ownership | Requires an explicit free-to-keep offer; excludes temporary free weekends |
 | Base-game dependencies | Checks whether an unowned base is free; attempts that base before the DLC |
 | Claim verification | Checks app or package ownership; a redirect alone is never success |
-| Telegram notifications | Store image, title, pre-discount price/currency, status, reason, and link |
-| Scheduled operation | Hourly workflow; unchanged notifications suppressed for seven days after successful scheduled runs |
+| Telegram notifications | Store image, title, pre-discount price/currency, status, end time in Cairo, remaining time, reason, and link |
+| Scheduled operation | Hourly workflow; unchanged offer/status notifications suppressed after successful scheduled runs |
 | Safe first run | Workflow imports inactive, with dry-run enabled |
 | Failure visibility | Separate error workflow for login, discovery, and other execution failures |
 
@@ -102,6 +102,14 @@ The following is illustrative, not evidence of a successful live claim:
 When Steam supplies an image, it is sent as a photo with the text as its caption. Otherwise, the text-only path is used. Missing original prices are labeled unavailable; they are never invented.
 
 </details>
+
+## Offer deadlines and repeat prevention
+
+The notification includes Steam's explicit free-to-keep end time for that app when available, formatted in **Africa/Cairo**, plus the remaining duration when sent. It never guesses a deadline from another product or a regular discount. Missing/ambiguous data is labeled unavailable.
+
+There is no seven-day resend timer. A successful scheduled execution remembers the current offer, status, and end time. A changed status or announced deadline sends an update; a changing countdown or reason text does not. After two consecutive complete scans without the offer, a returning offer can notify again. Manual editor runs do not persist this state.
+
+For the original SSH workflow, see [تعليمات تحديث النسخة القديمة](docs/UPGRADE-legacy.ar.md). The first run after upgrading may notify once to establish the new ledger. If a multi-message execution fails partway through delivery, previously delivered messages can repeat on retry.
 
 ## Operating limits
 
